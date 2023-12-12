@@ -11,27 +11,39 @@ Binary PDF data can be returned from API Gateway:
 
 Or write binary PDF data to S3 and return the S3 object URL in the response.
 
-To create a Lambda layer containing Puppeteer:
+Make Lambda layer package containing Puppeteer:
 ===
 Use "Chromium for Serverless platforms" https://github.com/Sparticuz/chromium/
 
 Use correct Puppeteer/Chromium version combination as per https://pptr.dev/chromium-support
 
 Project was initialized with PUPPETEER_VERSION=21.5.0, CHROMIUM_VERSION=119
-# Puppeteer or Playwright is a production dependency
 npm install --save puppeteer-core@$PUPPETEER_VERSION
-# @sparticuz/chromium can be a DEV dependency IF YOU ARE USING A LAYER, if you are not using a layer, use as a production dependency!
 npm install --save-dev @sparticuz/chromium@$CHROMIUM_VERSION
 
 Lambda layers for Node.js expect a zip file with the folder "nodejs" under which there is the "node_modules" directory with dependencies.
 The layers zip file (~60MB) should be uploaded to S3 and when creating the layer in AWS console, fetch from S3.
-Create an S3 bucket like "html-pdf-lambda" with a prefix "layer-deps".
+Create an S3 bucket like "html-pdf-lambda-<randomnumber>" with a prefix "layer-deps".
 
     npm install
     mkdir -p nodejs/node_modules
     cp -a node_modules/* nodejs/node_modules
     zip -r lambda-layer.zip nodejs
-    aws s3 cp lambda-layer.zip s3://html-pdf-lambda/layer-deps/lambda-layer.zip
+    aws s3 cp lambda-layer.zip s3://html-pdf-lambda-<randomnumber>/layer-deps/lambda-layer.zip
+
+
+Create the Lambda layer
+===
+Lambda -> Add Layer -> Create a Layer
+Runtime: Node.js 18.x
+name: "Puppeteer-deps"
+From S3: s3://html-pdf-lambda-<randomnumber>/layer-deps/lambda-layer.zip
+
+Add Layer to function
+===
+Choose a Layer: "Custom Layes"
+Select "Puppeteer-deps" from dropdown "Your Layers"; version 1.
+
 
 Create the Lambda function
 ===
@@ -50,6 +62,8 @@ Lambda function will return only a base64 encoded payload, so it needs to be dec
 
 Call Lambda function through API Gateway
 ===
+# Configuration: timeout to at least 20s
+
 Lambda function expects JSON encoded event data, not binary, it's not possible to give it a binary payload from API Gateway.
 Convert client HTML data to the JSON that the Lambda function expects in Integration Request Mapping Template for "text/html" Content Type:
 

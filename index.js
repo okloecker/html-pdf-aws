@@ -25,9 +25,10 @@ const getFontProperty = async (page) => {
   }
 };
 
-export const handler = async (event, responseStream) => { // awslambda.streamifyResponse(
+export const handler = async (event) => {
   console.log("event:", event);
 
+  //  console.log('event.body:', event.body)
   if (!event?.body?.length) {
     console.log("Missing payload");
     return {
@@ -86,6 +87,11 @@ export const handler = async (event, responseStream) => { // awslambda.streamify
 
   console.log("Returning base64 encoded PDF of length", buffer.length);
 
-  // API Gateway will decode base64 encoded data and return binary PDF
+  // const response = {
+  //   statusCode: 200,
+  //   type: "application/pdf",
+  //   body: buffer.toString("base64"),
+  // };
+
   return buffer.toString("base64");
 };
